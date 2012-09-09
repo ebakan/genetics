@@ -36,33 +36,33 @@ int main(int argc, char** argv)
     init_rng();
 
     static const double timeout                     =   5.00;
-    static const double timein                      =   5.00;
+    static const double timein                      =   1.00;
     static const double threshold                   =   0.01;
     static const double maxVoltage                  =  12.00;
     static const double minVoltage                  = -12.00;
     static const double goal                        =   1.00;
-    static const double mass                        =  01.00;
-    static const double motorStallTorque            = 500.00;
-    static const double motorFreeSpeed              = 500.00;
+    static const double mass                        =  1.000;
+    static const double motorStallTorque            = 010.00;
+    static const double motorFreeSpeed              = 010.00;
     static const double gearingRatio                =   1.00;
     static const double wheelDiameter               =   0.03;
-    static const double staticFriction              =   0.10;
-    static const double kineticFriction             =   0.05;
-    static const double seedKP                      =  10.00;
+    static const double staticFriction              =   0.50;
+    static const double kineticFriction             =   0.10;
+    static const double seedKP                      =   0.00;
     static const double seedKI                      =   0.00;
-    static const double seedKD                      =  10.00;
+    static const double seedKD                      =   0.00;
     static const double k                           =   1.00;
 
-    static const unsigned int populationSize        =  1000;
+    static const unsigned int populationSize        =  4000;
     static const unsigned int successorSize         =    10;
-    static const unsigned int minThreadWorkloadSize =    50;
-    static const unsigned int maxNumThreads         =     6;
+    static const unsigned int minThreadWorkloadSize =   100;
+    static const unsigned int maxNumThreads         =     8;
     static const unsigned int numCycles             =   100;
 
     PID1DProcessor processor(timeout, timein, threshold, maxVoltage, minVoltage, goal, mass, motorStallTorque, motorFreeSpeed, gearingRatio, wheelDiameter, staticFriction, kineticFriction);
 
     std::vector<Algo*> seeds(1);
-    seeds[0] = new PIDAlgo(new PDParam(seedKP, k), new PDParam(seedKI, k), new PDParam(seedKD, k), maxVoltage, minVoltage);
+    seeds[0] = new PIDAlgo(new PDParam(seedKP, k), new PDParam(seedKI, 0), new PDParam(seedKD, k/100.0), maxVoltage, minVoltage);
 
 
     God god(processor, seeds, populationSize, successorSize, minThreadWorkloadSize, maxNumThreads, numCycles);

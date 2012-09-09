@@ -24,6 +24,7 @@
 #include "Processor.hpp"
 
 #include <algorithm>
+#include <math.h>
 #include <pthread.h>
 #include <sstream>
 #include <vector>
@@ -32,6 +33,7 @@
  * Game Master / God Class
  * Oversees the "natural selection" of algorithms from generation to generation
  * Different exit conditions available by passing a functor to update()
+ * Online descriptive statistics derived from: ftp://reports.stanford.edu/pub/cstr/reports/cs/tr/79/773/CS-TR-79-773.pdf
  **/
 
 struct AlgoScore
@@ -50,12 +52,19 @@ struct threadData
     const Processor*  processor;
     pthread_mutex_t* mutex;
     Heap<AlgoScore, H>* scores;
+    double* popM;
+    double* popBar;
+    unsigned int* popN;
 };
 
 template<typename H> void* Process(void* param)
 {
     threadData<H>* td = static_cast<threadData<H>*>(param);
     Heap<AlgoScore, H> scores(td->successorSize, td->successorSize);
+    double xM = 0.0, xBar = 0.0;
+    unsigned int xN = td->stop - td->start;
+    double *popM = td->popM, *popBar = td->popBar;
+    unsigned int* popN = td->popN;
     for(unsigned int i = td->start; i < td->stop; i++)
     {
         Algo* algo = td->population->at(i);
@@ -63,8 +72,30 @@ template<typename H> void* Process(void* param)
         as.algo = algo;
         as.score = td->processor->process(algo);
         scores.Insert(as);
+        double delta = as.score.score - xBar;
+        xBar += delta / (i - td->start + 1);
+        xM += delta * (as.score.score - xBar);
     }
+
     pthread_mutex_lock(td->mutex);
+    if (*popN == 0)
+    {
+        *popM = xM;
+        *popBar = xBar;
+        *popN = xN;
+    }
+    else
+    {
+        double popM_ = *popM, popBar_ = *popBar;
+        unsigned int popN_ = *popN;
+        double delta = xBar - popBar_;
+        double n = xN + popN_;
+        double bar = (xN * xBar + popN_ * popBar_) / n;
+        double m = xM + popM_ + delta * delta * xN * popN_ / n;
+        *popM = m;
+        *popBar = bar;
+        *popN = n;
+    }
     for(unsigned int i = 0; i < td->successorSize; i++)
     {
         td->scores->Insert(scores.Pop());
@@ -203,8 +234,11 @@ class God
             pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
             pthread_mutex_t mutex;
             pthread_mutex_init(&mutex, NULL);
+            double prevAvg = 0.0, prevBest = 0.0;
             for(unsigned int i = 1; i <= m_numCycles; i++)
             {
+                double popM = 0.0, popBar = 0.0;
+                unsigned int popN = 0;
                 printf("Generation %d/%d\n",i,m_numCycles);
                 if (i == 1)
                 {
@@ -238,22 +272,14 @@ class God
 
                 for(unsigned int j = 0; j < numThreads; j++)
                 {
-                    threadData<H> td = {&population, j * m_populationSize / numThreads, (j + 1) * m_populationSize / numThreads, m_successorSize, &m_processor, &mutex, &scores};
+                    threadData<H> td = {&population, j * m_populationSize / numThreads, (j + 1) * m_populationSize / numThreads, m_successorSize, &m_processor, &mutex, &scores, &popM, &popBar, &popN};
                     if (j == numThreads-1)
                     {
                         td.stop = m_populationSize;
                     }
                     threadDatas[j] = td;
-                    //printf("%d %d\n",j, numThreads);
                     pthread_create(&threads[j], &attr, Process<H>, (void*) (&threadDatas[j]));
-                    //printf("%d %d\n", j, rc);
-                    //printf("%d %d\n",j, numThreads);
                 }
-                /*
-                pthread_attr_destroy(&attr);
-                pthread_attr_init(&attr);
-                pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-                */
                 for(unsigned int j = 0; j < numThreads; j++)
                 {
                     void* status;
@@ -265,13 +291,26 @@ class God
                     algoscores[j] = scores.Pop();
                 }
                 AlgoScore& best = *max_element(algoscores.begin(), algoscores.end(), m_sorter);
+
+                double sigma = sqrt(popM/m_populationSize);
+
+                printf("Average performance of population %d:\n", m_populationSize);
+                printf("mu: %f sigma: %f\n", popBar, sigma);
                 printf("Best Algo:\n");
                 printf("%s",best.algo->getSummary().c_str());
+                printf("\n");
                 printf("Success: %d Score: %f\n", best.score.success, best.score.score);
+                printf("\n");
+                printf("%% above avg: %f\n", -(best.score.score-popBar)/popBar*100.0);
+                printf("Std above avg: %f\n", -(best.score.score-popBar)/sigma);
+                printf("%% score change from prev: avg: %f best: %f\n", -(popBar - prevAvg) / prevAvg * 100.0, -(best.score.score - prevBest) / prevBest * 100.0);
                 std::stringstream ss;
                 ss << i << ".log";
                 m_processor.process(best.algo, ss.str());
                 printf("\n");
+
+                prevBest = best.score.score;
+                prevAvg = popBar;
 
                 C complete;
                 if (complete(algoscores, i))
