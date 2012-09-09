@@ -1,8 +1,8 @@
 CC=g++
 TARGET=genetics
-DEBUG=-g
+DEBUG=
 LFLAGS=-Wall $(DEBUG)
-CFLAGS=-Wall $(DEBUG) -c
+CFLAGS=-Wall $(DEBUG) -c -O3
 FRAMEWORKS=-lpthread
 DEPS= PDParam.o PIDAlgo.o PID1DProcessor.o gsl/libgsl.a rand.o
 
