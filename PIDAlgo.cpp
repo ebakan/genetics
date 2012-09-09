@@ -48,7 +48,7 @@ std::vector<double> PIDAlgo::update(std::vector<double> inputs)
     double kP = m_kP->get();
     double kI = m_kI->get();
     double kD = m_kD->get();
-    double error = inputs[1] - inputs[0];
+    double error = inputs[0] - inputs[1];
     double p = kP * error;
     m_errorSum += error;
     if (m_errorSum * kI > m_maxPower)

@@ -28,6 +28,10 @@ PDParam::PDParam(double p, double k)
 
 Param<double>* PDParam::gen() const
 {
+    if(m_k == 0)
+    {
+        return new PDParam(m_p, 0);
+    }
     double p = m_p;
     if (p == 0)
     {
