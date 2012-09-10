@@ -234,6 +234,7 @@ class God
             pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
             pthread_mutex_t mutex;
             pthread_mutex_init(&mutex, NULL);
+            AlgoScore* best = NULL;
             double prevAvg = 0.0, prevBest = 0.0;
             for(unsigned int i = 1; i <= m_numCycles; i++)
             {
@@ -256,14 +257,18 @@ class God
                 else
                 {
                     std::vector<Algo*> newpop(m_populationSize);
-                    for(unsigned int j = 0; j < m_populationSize; j++)
+                    newpop[0] = best->algo;
+                    for(unsigned int j = 1; j < m_populationSize; j++)
                     {
                         AlgoScore as = algoscores[j%m_successorSize];
                         newpop[j] = as.algo->gen();
                     }
                     for(unsigned int j = 0; j < m_populationSize; j++)
                     {
-                        delete population[j];
+                        if (population[j] != best->algo)
+                        {
+                            delete population[j];
+                        }
                         population[j] = newpop[j];
                     }
                 }
@@ -290,26 +295,26 @@ class God
                 {
                     algoscores[j] = scores.Pop();
                 }
-                AlgoScore& best = *max_element(algoscores.begin(), algoscores.end(), m_sorter);
+                best = &(*max_element(algoscores.begin(), algoscores.end(), m_sorter));
 
                 double sigma = sqrt(popM/m_populationSize);
 
                 printf("Average performance of population %d:\n", m_populationSize);
                 printf("mu: %f sigma: %f\n", popBar, sigma);
                 printf("Best Algo:\n");
-                printf("%s",best.algo->getSummary().c_str());
+                printf("%s",best->algo->getSummary().c_str());
                 printf("\n");
-                printf("Success: %d Score: %f\n", best.score.success, best.score.score);
+                printf("Success: %d Score: %f\n", best->score.success, best->score.score);
                 printf("\n");
-                printf("%% above avg: %f\n", -(best.score.score-popBar)/popBar*100.0);
-                printf("Std above avg: %f\n", -(best.score.score-popBar)/sigma);
-                printf("%% score change from prev: avg: %f best: %f\n", -(popBar - prevAvg) / prevAvg * 100.0, -(best.score.score - prevBest) / prevBest * 100.0);
+                printf("%% above avg: %f\n", -(best->score.score-popBar)/popBar*100.0);
+                printf("Std above avg: %f\n", -(best->score.score-popBar)/sigma);
+                printf("%% score change from prev: avg: %f best: %f\n", -(popBar - prevAvg) / prevAvg * 100.0, -(best->score.score - prevBest) / prevBest * 100.0);
                 std::stringstream ss;
                 ss << i << ".log";
-                m_processor.process(best.algo, ss.str());
+                m_processor.process(best->algo, ss.str());
                 printf("\n");
 
-                prevBest = best.score.score;
+                prevBest = best->score.score;
                 prevAvg = popBar;
 
                 C complete;
@@ -317,13 +322,13 @@ class God
                 {
                     for(unsigned int j = 0; j < m_populationSize; j++)
                     {
-                        if (population[j] != best.algo)
+                        if (population[j] != best->algo)
                         {
                             delete population[j];
                             population[j] = NULL;
                         }
                     }
-                    return best;
+                    return *best;
                 }
             }
 
