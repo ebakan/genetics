@@ -2,7 +2,7 @@ CC=g++
 TARGET=genetics
 DEBUG=
 LFLAGS=-Wall $(DEBUG)
-CFLAGS=-Wall $(DEBUG) -c -g
+CFLAGS=-Wall $(DEBUG) -c -O3
 FRAMEWORKS=-lpthread
 DEPS= PDParam.o PIDAlgo.o PID1DProcessor.o gsl/libgsl.a rand.o
 
@@ -30,7 +30,7 @@ FORCE_MAKE :
 	true
 
 .IGNORE .PHONY clean :
-	rm $(TARGET)
-	rm *.o
-	rm -r $(TARGET).dSYM
+	if [-f $(TARGET) ]; then rm $(TARGET); fi;
+	if [ -f *.o ]; then rm *.o; fi;
+	if [ -d $(TARGET).dSYM ]; then rm -r $(TARGET).dSYM; fi;
 	cd gsl && make clean
