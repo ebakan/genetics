@@ -35,7 +35,7 @@ class PIDAlgo : public virtual Algo
          * @param inputs a 2-element vector of (goal, current)
          * @preturn a 1-element vector of (power)
          */
-        virtual std::vector<double> update(std::vector<double> inputs);
+        virtual std::vector<double> update(const std::vector<double>& inputs);
         virtual void finalize();
         virtual Algo* gen() const;
         virtual std::string getSummary() const;

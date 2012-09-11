@@ -43,7 +43,7 @@ void PIDAlgo::initialize()
     m_lastError = 0;
 }
 
-std::vector<double> PIDAlgo::update(std::vector<double> inputs)
+std::vector<double> PIDAlgo::update(const std::vector<double>& inputs)
 {
     double kP = m_kP->get();
     double kI = m_kI->get();

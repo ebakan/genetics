@@ -32,7 +32,7 @@ class Algo
 {
     public:
         virtual void initialize() = 0;
-        virtual std::vector<double> update(std::vector<double> inputs)  = 0;
+        virtual std::vector<double> update(const std::vector<double>& inputs)  = 0;
         virtual void finalize() = 0;
         virtual Algo* gen() const = 0;
         virtual std::string getSummary() const = 0;

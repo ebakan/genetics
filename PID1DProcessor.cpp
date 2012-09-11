@@ -60,15 +60,16 @@ Processor::Score PID1DProcessor::process(Algo* a, std::string logname) const
     double finalSpeed = m_motorFreeSpeed / m_gearingRatio;
     double inertia = m_mass; // Not entirely accurate, need to think harder
     double score = 0.0;
+    std::vector<double> inputs(2);
+    std::vector<double> output;
     while (t < m_timeout || (steadytime > 0  && steadytime < m_timein))
     {
 
         // Model for motor: http://www.inf.fu-berlin.de/lehre/SS05/Robotik/motors.pdf
 
-        std::vector<double> inputs(2);
         inputs[0] = m_goal;
         inputs[1] = theta * wheelCircumference;
-        std::vector<double> output = a->update(inputs);
+        output = a->update(inputs);
 
         double stallTorque = m_motorStallTorque * output[0] / m_maxVoltage * m_gearingRatio;
 
